@@ -4,11 +4,17 @@ import sys
 import os
 import nltk
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer 
 import pandas as pd
+from sklearn import svm
 import re
+import collections
+
+
 
 def get_documents(directory_name):
 
+    lemmatizer = WordNetLemmatizer() 
     documents = {}
     for filename in os.listdir(directory_name):
         # Ler documento
@@ -19,10 +25,16 @@ def get_documents(directory_name):
         tokens = nltk.word_tokenize(content)
         stop_words = stopwords.words('english')
         tokens = [word for word in tokens if word not in stop_words]
+
+        # Lemmatização
+        tokens = map(lambda word: lemmatizer.lemmatize(word), tokens)
+
+        # POS Tagging
+        #tokens_tagged = nltk.pos_tag(tokens)
         
         documents[filename] = tokens
 
-    return tokens
+    return documents
 
 def load_etymology():
     # Carregar dados da etytree
@@ -35,15 +47,36 @@ def load_etymology():
 
 
 def origin_of(word):
-    candidates = etymwn[etymwn['word'].apply(lambda test_word: test_word in word)] # usar re
-    return candidates['parent_word'][0][0:3]
+    # Consultar árvore etimologica e extrair idioma ancestral (primeiro nível ) da primeira ocorrência encontrada
+    match = etymwn[etymwn['word'].apply(lambda etymwn_word: re.match('origin of ' + word, etymwn_word) is not None)]
+    return (match['parent_word'][0][0:3] if len(match) else None)
+
+languages = pd.DataFrame.from_dict({'eng':0,'ang':0}) # adiconar as válidas
+def etymological_sig(document):
+
+    # Filtrar categoria de POS-Tagging
+
+    word_count = languages.copy()
+
+    for word in document:
+        origin = origin_of(word)
+
+        if origin is not None and origin in languages:
+            word_count[origin] = word_count[origin] + 1
+
+    return word_count
 
 if __name__ == '__main__':
 
     british_documents = get_documents('documentos/BWAE')
-    swedish_documents = get_documents('documentos/USE')
+    #swedish_documents = get_documents('documentos/USE')
 
-    print(len(swedish_documents))
+    print(len(british_documents))
 
-    #etymwn = load_etymology()
+    etymwn = load_etymology()
 
+    sig = pd.DataFrame()
+    for document in british_documents:
+        sig = sig.append(etymological_sig(document))
+
+    print(sig)
