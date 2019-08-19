@@ -85,7 +85,11 @@ def generate_sig_dataset(documents, etymwn, filename):
     for name, document in documents.items():
         sig = sig.append(etymological_sig(document, etymwn))
 
+    # Preencher valores ausentes com zero
     sig = sig.fillna(0)
+    # Normalizar por total de palavras
+    sig = sig.divide(sig.sum(axis=1),axis=0)
+    # Salvar em disco
     sig.to_csv(filename)
 
 def generate_british_swedish():
