@@ -10,15 +10,14 @@ import re
 import collections
 import string
 
-
-
-def get_documents(directory_name):
+re_punctuation = re.compile('[{0}]+'.format(string.punctuation))
+def get_documents(directory_name, encoding='utf-8'):
 
     lemmatizer = WordNetLemmatizer() 
     documents = {}
     for filename in os.listdir(directory_name):
         # Ler documento
-        document = open(directory_name + '/' + filename, 'r')
+        document = open(directory_name + '/' + filename, 'r', encoding = encoding)
         content = document.read()
 
         # Obter tokens a partir do documento
@@ -27,7 +26,7 @@ def get_documents(directory_name):
         stop_words = stopwords.words('english')
         tokens = [word for word in tokens if word not in stop_words]
         # Remover sinais de pontuação
-        tokens = [x for x in tokens if not re.fullmatch('[{0}]+'.format(string.punctuation), x)]
+        tokens = [x for x in tokens if not re_punctuation.fullmatch(x)]
 
         # Lemmatização
         tokens = list(map(lambda word: lemmatizer.lemmatize(word), tokens))
@@ -46,20 +45,23 @@ def load_etymology():
     etymwn.columns = ['word','relation','parent_word']
     etymwn = etymwn[etymwn['relation'].apply(lambda rel_type: rel_type in used_rel_types)]
 
-    # Carregar somente palavras da lingua inglesa (acelerar busca de um só nível na árvore)
-    etymwn = etymwn[etymwn['word'].apply(lambda w: w[0:3] == 'eng')]
+    # Definir indice
+    etymwn.index = etymwn['word']
 
     return etymwn
 
 
 def origin_of(word, etymwn, lang='eng', level=1):
     # Consultar árvore etimologica e extrair idioma ancestral (primeiro nível ) da primeira ocorrência encontrada
-    entries = etymwn[etymwn['word'].apply(lambda etymwn_word: '{0}: {1}'.format(lang, word) == etymwn_word)]
-    lang, word = (entries['parent_word'].iloc[0].split(': ') if len(entries) else [None, None])
-    if lang is None or level == 1:
-        return lang, word
-    else:
-        return origin_of(word, etymwn, lang=lang, level=level-1)
+    entrie = '{0}: {1}'.format(lang, word)
+    try:
+        lang, word = etymwn.loc[entrie]['parent_word'].split(': ')
+        if level == 1:
+            return lang, word
+        else:
+            return origin_of(word, etymwn, lang=lang, level=level-1)
+    except:
+        return None, None
 
 def etymological_sig(document, etymwn):
 
@@ -77,25 +79,29 @@ def etymological_sig(document, etymwn):
 
     return word_count
 
-def generate_sig_dataset(documents, filename):
-
-    etymwn = load_etymology()
+def generate_sig_dataset(documents, etymwn, filename):
 
     sig = pd.DataFrame()
-    for document in documents:
+    for name, document in documents.items():
         sig = sig.append(etymological_sig(document, etymwn))
-        print('Assinatura etimológica do documento "{0}": {1}'.format(document, sig))
 
+    sig = sig.fillna(0)
     sig.to_csv(filename)
 
 def generate_british_swedish():
 
-    #british_documents = get_documents('documentos/BWAE')
-    #swedish_documents = get_documents('documentos/USE')
-    british_documents = get_documents('documentos/teste')
+    british_documents = get_documents('documentos/BWAE')
+    print("Ensaios britânicos carregados")
+    swedish_documents = get_documents('documentos/USE', encoding="ISO-8859-1")
+    print("Ensaios suecos carregados")
+
+    etymwn = load_etymology()
+    print("Árvore etimológica carregada")
 
     # gerar datsets com bag of words para cada base de documento
     
     # Gerar datasets
-    generate_sig_dataset(british_documents, 'native_fingerprint.csv')
-    #generate_sig_dataset(swedish_documents, 'non-native_fingerprint.csv')
+    print("Gerando assinaturas etimológicas para ensaios nativos")
+    generate_sig_dataset(british_documents, etymwn, 'native_fingerprint.csv')
+    print("Gerando assinaturas etimológicas para ensaios não-nativos")
+    generate_sig_dataset(swedish_documents, etymwn, 'non-native_fingerprint.csv')
