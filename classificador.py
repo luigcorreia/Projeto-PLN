@@ -47,7 +47,7 @@ if __name__ == '__main__':
     # Obter previsão
     y_pred = clf_1.predict(X_test)
     # Obter acurácia
-    print("Acurária do classificador SVM sem informação etimológica: ")
+    print("Acurácia do classificador SVM sem informação etimológica: ")
     print(accuracy_score(y_test, y_pred))
     
 
@@ -60,5 +60,5 @@ if __name__ == '__main__':
     # Obter previsão
     y_pred = clf_2.predict(X_test)
     # Obter acurácia
-    print("Acurária do classificador SVM sem informação etimológica: ")
+    print("Acurácia do classificador SVM sem informação etimológica: ")
     print(accuracy_score(y_test, y_pred))
