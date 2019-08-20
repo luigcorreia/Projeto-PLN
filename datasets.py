@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import sys
 import os
 import nltk
@@ -79,10 +77,13 @@ def etymological_sig(document, etymwn):
 
     return word_count
 
-def generate_sig_dataset(documents, etymwn, filename):
+def generate_sig_dataset(documents, etymwn, filename, n=None):
+
+    data = list(documents.items())
+    data = data[:n if n else len(data)]
 
     sig = pd.DataFrame()
-    for name, document in documents.items():
+    for name, document in data:
         sig = sig.append(etymological_sig(document, etymwn))
 
     # Preencher valores ausentes com zero
@@ -93,9 +94,13 @@ def generate_sig_dataset(documents, etymwn, filename):
     sig.to_csv(filename)
 
 
-def generate_content_dataset(documents, filename):
+def generate_content_dataset(documents, filename, n=None):
 
     data = list(map(lambda document: " ".join(documents[document]), documents))
+    data = data[:n if n else len(data)]
+
+    print(len(data))
+
     matrix = CountVectorizer(max_features=1000)
     X = matrix.fit_transform(data).toarray()
     
@@ -107,14 +112,14 @@ def generate_content_dataset(documents, filename):
 
 def generate_british_swedish_datasets():
 
-    british_documents = get_documents('documentos/BWAE')
-    print("Ensaios britânicos carregados")
-    swedish_documents = get_documents('documentos/USE', encoding="ISO-8859-1")
-    print("Ensaios suecos carregados")
+    native_documents = get_documents('documentos/native')
+    print("Ensaios nativos carregados")
+    non_native_documents = get_documents('documentos/non-native', encoding="ISO-8859-1")
+    print("Ensaios  carregados")
 
     # Gerar datsets com bag of words
-    generate_content_dataset(british_documents, 'native_content.csv')
-    generate_content_dataset(swedish_documents, 'non-native_content.csv')
+    generate_content_dataset(native_documents, 'native_content.csv')
+    generate_content_dataset(non_native_documents, 'non-native_content.csv')
 
     # Carregar árvore etimológica
     etymwn = load_etymology()
@@ -122,6 +127,6 @@ def generate_british_swedish_datasets():
     
     # Gerar datasets de assinaturas etimológicas
     print("Gerando assinaturas etimológicas para ensaios nativos")
-    generate_sig_dataset(british_documents, etymwn, 'native_fingerprint.csv')
+    generate_sig_dataset(native_documents, etymwn, 'native_fingerprint.csv')
     print("Gerando assinaturas etimológicas para ensaios não-nativos")
-    generate_sig_dataset(swedish_documents, etymwn, 'non-native_fingerprint.csv')
+    generate_sig_dataset(non_native_documents, etymwn, 'non-native_fingerprint.csv')

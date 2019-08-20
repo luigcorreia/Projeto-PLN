@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import pandas as pd
 from sklearn import svm
 from sklearn.model_selection import train_test_split
@@ -56,7 +58,7 @@ if __name__ == '__main__':
     clf_2 = svm.SVC()
     clf_2.fit(X_train, y_train) 
     # Obter previsão
-    y_pred = clf.predict(X_test)
+    y_pred = clf_2.predict(X_test)
     # Obter acurácia
     print("Acurária do classificador SVM sem informação etimológica: ")
     print(accuracy_score(y_test, y_pred))
