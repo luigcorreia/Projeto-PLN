@@ -9,6 +9,8 @@ import pandas as pd
 import re
 import collections
 import string
+from sklearn.feature_extraction.text import CountVectorizer
+import numpy as np
 
 re_punctuation = re.compile('[{0}]+'.format(string.punctuation))
 def get_documents(directory_name, encoding='utf-8'):
@@ -24,7 +26,7 @@ def get_documents(directory_name, encoding='utf-8'):
         tokens = nltk.word_tokenize(content)
         # Remover stopwords
         stop_words = stopwords.words('english')
-        tokens = [word for word in tokens if word not in stop_words]
+        tokens = [word.lower() for word in tokens if word not in stop_words]
         # Remover sinais de pontuação
         tokens = [x for x in tokens if not re_punctuation.fullmatch(x)]
 
@@ -65,8 +67,6 @@ def origin_of(word, etymwn, lang='eng', level=1):
 
 def etymological_sig(document, etymwn):
 
-    # Filtrar categoria de POS-Tagging
-
     word_count = pd.DataFrame()
 
     for word in document:
@@ -92,19 +92,35 @@ def generate_sig_dataset(documents, etymwn, filename):
     # Salvar em disco
     sig.to_csv(filename)
 
-def generate_british_swedish():
+
+def generate_content_dataset(documents, filename):
+
+    data = list(map(lambda document: " ".join(documents[document]), documents))
+    matrix = CountVectorizer(max_features=1000)
+    X = matrix.fit_transform(data).toarray()
+    
+    # Normalizar por total de palavras
+    X = (X.T / X.sum(axis=1)).T
+    # Salvar em disco
+    np.savetxt(filename, X, delimiter=',')
+
+
+def generate_british_swedish_datasets():
 
     british_documents = get_documents('documentos/BWAE')
     print("Ensaios britânicos carregados")
     swedish_documents = get_documents('documentos/USE', encoding="ISO-8859-1")
     print("Ensaios suecos carregados")
 
+    # Gerar datsets com bag of words
+    generate_content_dataset(british_documents, 'native_content.csv')
+    generate_content_dataset(swedish_documents, 'non-native_content.csv')
+
+    # Carregar árvore etimológica
     etymwn = load_etymology()
     print("Árvore etimológica carregada")
-
-    # gerar datsets com bag of words para cada base de documento
     
-    # Gerar datasets
+    # Gerar datasets de assinaturas etimológicas
     print("Gerando assinaturas etimológicas para ensaios nativos")
     generate_sig_dataset(british_documents, etymwn, 'native_fingerprint.csv')
     print("Gerando assinaturas etimológicas para ensaios não-nativos")
