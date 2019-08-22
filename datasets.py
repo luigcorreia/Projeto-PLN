@@ -11,7 +11,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 
 re_punctuation = re.compile('[{0}]+'.format(string.punctuation))
-def get_documents(directory_name, encoding='utf-8'):
+re_text = re.compile('</title>([\S\s]*)</doc>')
+
+def get_documents(directory_name, encoding='utf-8', filterTags=False):
 
     lemmatizer = WordNetLemmatizer() 
     documents = {}
@@ -19,6 +21,10 @@ def get_documents(directory_name, encoding='utf-8'):
         # Ler documento
         document = open(directory_name + '/' + filename, 'r', encoding = encoding)
         content = document.read()
+        if filterTags:
+            match = re_text.search(content)
+            if match:
+                content = match.group(1)
 
         # Obter tokens a partir do documento
         tokens = nltk.word_tokenize(content)
@@ -27,6 +33,7 @@ def get_documents(directory_name, encoding='utf-8'):
         tokens = [word.lower() for word in tokens if word not in stop_words]
         # Remover sinais de pontuação
         tokens = [x for x in tokens if not re_punctuation.fullmatch(x)]
+        tokens = [x for x in tokens if not '']
 
         # Lemmatização
         tokens = list(map(lambda word: lemmatizer.lemmatize(word), tokens))
@@ -114,7 +121,7 @@ def generate_british_swedish_datasets():
 
     native_documents = get_documents('documentos/native')
     print("Ensaios nativos carregados")
-    non_native_documents = get_documents('documentos/non-native', encoding="ISO-8859-1")
+    non_native_documents = get_documents('documentos/non-native', encoding="ISO-8859-1", filterTags=True)
     print("Ensaios  carregados")
 
     # Gerar datsets com bag of words

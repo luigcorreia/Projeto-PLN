@@ -2,6 +2,7 @@
 
 import pandas as pd
 from sklearn import svm
+from sklearn import naive_bayes
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import numpy as np
@@ -42,12 +43,13 @@ if __name__ == '__main__':
     # Dividir o dataset em dados de treinamento e test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     # Treinar classficador
-    clf_1 = svm.SVC()
+    #clf_1 = svm.SVC()
+    clf_1 = naive_bayes.GaussianNB()
     clf_1.fit(X_train, y_train) 
     # Obter previsão
     y_pred = clf_1.predict(X_test)
     # Obter acurácia
-    print("Acurácia do classificador SVM sem informação etimológica: ")
+    print("Acurácia do classificador NB sem informação etimológica: ")
     print(accuracy_score(y_test, y_pred))
     
 
@@ -55,10 +57,11 @@ if __name__ == '__main__':
     # Dividir o dataset em dados de treinamento e test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     # Treinar classficador
-    clf_2 = svm.SVC()
+    #clf_2 = svm.SVC()
+    clf_2 = naive_bayes.GaussianNB()
     clf_2.fit(X_train, y_train) 
     # Obter previsão
     y_pred = clf_2.predict(X_test)
     # Obter acurácia
-    print("Acurácia do classificador SVM sem informação etimológica: ")
+    print("Acurácia do classificador NB com informação etimológica: ")
     print(accuracy_score(y_test, y_pred))
